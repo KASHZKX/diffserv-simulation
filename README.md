@@ -93,14 +93,36 @@ diffserv-simulation/
 ├── README.md              # Project documentation
 ├── main.py                # Entry point with CLI parsing
 ├── requirements.txt       # Dependencies (none required)
-└── src/
-    ├── __init__.py        # Package initialization
-    ├── packet.py          # Packet class
-    ├── source.py          # Source class
-    ├── edge_node.py       # EdgeNode (Remarker) class
-    ├── core_node.py       # CoreNode (Scheduler) class
-    └── simulator.py       # Main simulator logic
+├── src/
+│   ├── __init__.py        # Package initialization
+│   ├── packet.py          # Packet class
+│   ├── source.py          # Source class
+│   ├── edge_node.py       # EdgeNode (Remarker) class
+│   ├── core_node.py       # CoreNode (Scheduler) class
+│   └── simulator.py       # Main simulator logic
+└── tests/
+    ├── __init__.py        # Test package
+    ├── test_packet.py     # Packet unit tests
+    ├── test_source.py     # Source unit tests (metrics calculation)
+    ├── test_edge_node.py  # EdgeNode unit tests
+    ├── test_core_node.py  # CoreNode unit tests
+    └── test_simulator.py  # Integration tests
 ```
+
+## Testing
+
+Run all tests:
+```bash
+python -m unittest discover tests/ -v
+```
+
+### Test Coverage
+
+- **Packet tests**: Packet creation, type modification, representation
+- **Source tests**: Type normalization, packet generation, metrics calculation (drop rate, latency, completion time)
+- **EdgeNode tests**: AF remarking logic (every 5th packet), EF/BE passthrough
+- **CoreNode tests**: Queue management, tail-drop policy, strict priority scheduling
+- **Simulator tests**: End-to-end integration with various traffic patterns
 
 ## Simulation Details
 
