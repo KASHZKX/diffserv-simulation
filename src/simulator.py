@@ -54,6 +54,8 @@ class Simulator:
                 # Edge node processing (remarking)
                 self.edge_node.process(packet)
                 # Core node enqueue (may drop if queue full)
+                # Note: enqueue returns False if dropped, but drop rate
+                # is calculated from (generated - success) so no need to track
                 self.core_node.enqueue(packet)
 
             # 4. Service phase: serve one packet

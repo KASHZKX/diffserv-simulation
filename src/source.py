@@ -78,7 +78,7 @@ class Source:
         """
         if self.packets_generated == 0:
             return 0.0
-        dropped = self.packets_generated - self.TARGET_SUCCESS
+        dropped = self.packets_generated - self.packets_success
         return (dropped / self.packets_generated) * 100
 
     def get_avg_latency(self) -> float:
