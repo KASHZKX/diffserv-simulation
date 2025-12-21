@@ -1,5 +1,6 @@
 """Edge Node (Remarker) class for DiffServ simulation."""
 
+from . import config
 from .packet import Packet
 
 
@@ -18,21 +19,28 @@ class EdgeNode:
         """Initialize the edge node."""
         self.af_counter = 0
 
-    def process(self, packet: Packet) -> None:
+    def process(self, packet: Packet, current_time: float) -> None:
         """Process a packet through the edge node.
 
         Applies remarking policy:
         - AF packets: Every 5th AF packet is downgraded to BE.
         - EF and BE packets: Pass through unchanged.
+        Sets edge processing completion time.
 
         Args:
             packet: The packet to process.
+            current_time: Current simulation time (ms).
         """
         if packet.current_type == 'AF':
             self.af_counter += 1
-            # Downgrade every 5th AF packet to BE
-            if self.af_counter % 5 == 0:
+            # Downgrade every N-th AF packet to BE (based on config)
+            if self.af_counter % config.AF_REMARKING_INTERVAL == 0:
                 packet.current_type = 'BE'
+        
+        # Edge processing time (from config)
+        packet.edge_complete_time = packet.edge_arrival_time + config.EDGE_PROCESSING_TIME
+        # After edge processing, packet travels to core
+        packet.core_arrival_time = packet.edge_complete_time + config.EDGE_TO_CORE_TRANSMISSION_DELAY + config.EDGE_TO_CORE_PROPAGATION_DELAY
 
     def __repr__(self) -> str:
         """Return a string representation of the edge node."""
