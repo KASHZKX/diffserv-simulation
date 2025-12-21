@@ -1,144 +1,95 @@
-# DiffServ Simulation
+# DiffServ 網路模擬器 (DiffServ Network Simulation)
 
-A discrete-event simulator for Differentiated Services (DiffServ) network architecture, modeling packet flow through edge nodes (traffic policing/remarking) and core nodes (priority queuing).
+這是一個基於 Python 的 Differentiated Services (DiffServ) 網路架構模擬程式。此專案模擬了封包從來源端 (Source) 經過邊緣節點 (Edge Node) 和核心節點 (Core Node) 到達目的地的過程，並實作了不同服務等級的流量控制與排程機制。
 
-## System Architecture
+## 功能特點
 
-```
-Sources (n sources) --> Edge Node (Remarker) --> Core Node (Scheduler) --> Destination
-     |                        |                        |
-     |                        |                        |
-  Generate              Traffic Policing          Priority Queuing
-  Packets               AF Remarking              Strict Priority
-  (EF/AF/BE)            (every 5th AF→BE)         (EF > AF > BE)
-```
+本模擬器支援三種 DiffServ 服務等級，優先級由高至低分別為：
+*   **EF (Expedited Forwarding)**: 最高優先級，模擬低延遲需求的流量。
+*   **AF (Assured Forwarding)**: 中等優先級，但在流量超標時可能會被重新標記 (Remarking) 降級。
+*   **BE (Best Effort)**: 最低優先級，像是傳統的網際網路流量。
 
-### Components
+### 核心機制
+*   **來源端 (Source)**: 根據輸入模式產生封包。
+*   **邊緣節點 (Edge Node)**: 執行流量監管 (Traffic Policing)。
+    *   **Remarking**: 預設策略會將每 5 個 AF 封包中的第 1 個降級為 BE (可於設定中調整)。
+*   **核心節點 (Core Node)**: 執行優先權佇列 (Priority Queuing)。
+    *   擁有三個獨立佇列 (EF, AF, BE)。
+    *   採用絕對優先權調度 (Strict Priority Scheduling)，只要高優先權佇列有封包，就會先傳送。
+    *   佇列容量限制 (預設各為 1 個封包，可調整)，若佇列滿則會丟包。
 
-1. **Sources**: Multiple independent traffic generators, each belonging to one service class:
-   - **EF** (Expedited Forwarding): Highest priority
-   - **AF** (Assured Forwarding): Medium priority (subject to remarking)
-   - **BE** (Best Effort): Lowest priority
+## 系統需求
 
-2. **Edge Node**: Traffic policing without buffering
-   - Every 5th AF packet is downgraded to BE
+*   Python 3.x
+*   無須安裝額外第三方套件 (僅使用標準函式庫)。
 
-3. **Core Node**: Bottleneck with limited buffers (total: 100 packets)
-   - Q_EF capacity: 40 packets
-   - Q_AF capacity: 30 packets
-   - Q_BE capacity: 30 packets
-   - Tail-drop policy when queue is full
-   - Strict priority scheduling (1 packet/time step)
+## 使用方式
 
-## Installation
+請在專案根目錄下執行 `main.py` 並使用 `--patterns` (或 `-p`) 參數指定每個來源的流量類型。
 
+### 參數說明
+*   `E`: Expedited Forwarding (EF)
+*   `A`: Assured Forwarding (AF)
+*   `B`: Best Effort (BE)
+
+### 執行範例
+
+**範例 1：單一混合流量**
+模擬 5 個來源，分別為 EF, AF, BE, AF, EF。
 ```bash
-# Clone the repository
-git clone https://github.com/KASHZKX/diffserv-simulation.git
-cd diffserv-simulation
-
-# No external dependencies required (Python 3.6+)
-pip install -r requirements.txt
-```
-
-## Usage
-
-```bash
-# Basic usage with space-separated patterns
 python main.py --patterns E A B A E
-
-# Patterns as a single string
-python main.py --patterns EABAE
-
-# Using short option
-python main.py -p E A B
-
-# Get help
-python main.py --help
 ```
-
-### Pattern Types
-
-| Pattern | Full Name | Priority | Description |
-|---------|-----------|----------|-------------|
-| E | Expedited Forwarding (EF) | High | Real-time traffic, served first |
-| A | Assured Forwarding (AF) | Medium | Subject to remarking policy |
-| B | Best Effort (BE) | Low | Served last, no guarantees |
-
-## Output Format
-
-```text
-Simulating for inputs: EF, AF, BE, AF, EF
-----------------------------------------------------------------------
-Source ID  | Type | Completion Time | Drop Rate (%) | Avg Latency
-----------------------------------------------------------------------
-0          | EF   | 2015            | 50.4          | 38.3       
-1          | AF   | 4030            | 75.2          | 80.9       
-2          | BE   | 5095            | 80.4          | 118.4      
-3          | AF   | 4065            | 75.4          | 68.6       
-4          | EF   | 1970            | 49.3          | 38.2       
-----------------------------------------------------------------------
-```
-
-### Metrics Explained
-
-1. **Completion Time**: Time step when 1000th packet successfully transmitted
-2. **Drop Rate**: `(packets_generated - 1000) / packets_generated × 100%`
-3. **Average Latency**: Mean of `(service_time - generation_time)` for 1000 successful packets
-
-## Project Structure
-
-```
-diffserv-simulation/
-├── README.md              # Project documentation
-├── main.py                # Entry point with CLI parsing
-├── requirements.txt       # Dependencies (none required)
-├── src/
-│   ├── __init__.py        # Package initialization
-│   ├── packet.py          # Packet class
-│   ├── source.py          # Source class
-│   ├── edge_node.py       # EdgeNode (Remarker) class
-│   ├── core_node.py       # CoreNode (Scheduler) class
-│   └── simulator.py       # Main simulator logic
-└── tests/
-    ├── __init__.py        # Test package
-    ├── test_packet.py     # Packet unit tests
-    ├── test_source.py     # Source unit tests (metrics calculation)
-    ├── test_edge_node.py  # EdgeNode unit tests
-    ├── test_core_node.py  # CoreNode unit tests
-    └── test_simulator.py  # Integration tests
-```
-
-## Testing
-
-Run all tests:
+或者連在一起寫：
 ```bash
-python -m unittest discover tests/ -v
+python main.py --patterns EABAE
 ```
 
-### Test Coverage
+**範例 2：多個參數輸入**
+```bash
+python main.py -p E A B
+```
 
-- **Packet tests**: Packet creation, type modification, representation
-- **Source tests**: Type normalization, packet generation, metrics calculation (drop rate, latency, completion time)
-- **EdgeNode tests**: AF remarking logic (every 5th packet), EF/BE passthrough
-- **CoreNode tests**: Queue management, tail-drop policy, strict priority scheduling
-- **Simulator tests**: End-to-end integration with various traffic patterns
+## 模擬結果與輸出
 
-## Simulation Details
+程式執行時會顯示詳細的封包流動日誌：
+*   `[Edge Receive]`: 邊緣節點接收封包
+*   `[Edge Send]`: 邊緣節點發送封包 (可能已發生 Remarking)
+*   `[Core Receive]`: 核心節點接收封包 (進入佇列)
+*   `[Core Send]`: 核心節點發送封包 (可能因佇列滿而遺失)
+*   `[Dst Reach]`: 封包抵達目的地
 
-### Time Model
-- Discrete time steps (t = 0, 1, 2, ...)
-- Each active source generates 1 packet per time step
-- Core node serves 1 packet per time step
+模擬結束後會顯示統計表格：
+*   **Completion Time**: 來源端完成所有封包傳輸的時間。
+*   **Drop Rate (%)**: 封包遺失率。
+*   **Avg Latency**: 平均延遲時間 (ms)。
 
-### Termination Condition
-- Each source completes when 1000 packets are successfully transmitted
-- Simulation ends when all sources complete
+## 參數設定
 
-### Fairness
-- Packets from the same time step are randomly shuffled before processing
-- This ensures no source has systematic advantage from processing order
+您可以在 `src/config.py` 中調整所有模擬參數，包括：
+*   **Time Parameters**: 模擬時間步長、封包產生間隔。
+*   **Network Delay**: 各節點間的傳輸與傳播延遲、處理時間。
+*   **Queue Capacity**: 核心節點各佇列的容量 (`CORE_QUEUE_CAPACITY_EF` 等)。
+*   **Traffic Policing**: AF 封包的降級策略 (`AF_REMARKING_INTERVAL`)。
+*   **Simulation Target**: 每個來源需成功傳送的封包數量。
 
-## License
+## 網頁介面 (Web Interface)
 
-MIT License
+本專案包含一個現代化的 React 網頁介面，提供圖形化儀表板來執行模擬與分析結果。
+
+### 啟動方式
+
+1.  **啟動後端伺服器**:
+    ```bash
+    pip install -r requirements.txt
+    python server.py
+    ```
+
+2.  **啟動前端網頁**:
+    ```bash
+    cd web
+    npm install
+    npm install axios chart.js react-chartjs-2
+    npm run dev
+    ```
+
+3.  開啟瀏覽器訪問顯示的網址 (例如 `http://localhost:5173`)。
