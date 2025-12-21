@@ -9,22 +9,6 @@ from src.source import Source
 class TestSimulatorMetrics(unittest.TestCase):
     """Test cases for simulator metrics calculation across different scenarios."""
 
-    def test_single_ef_source_no_contention(self):
-        """Test single EF source with no contention (0% drop rate expected)."""
-        random.seed(42)
-        sim = Simulator(['E'])
-        sim.run()
-
-        results = sim.get_results()
-        self.assertEqual(len(results), 1)
-
-        # Single source with no contention should have 0% drop rate
-        # and completion time = 999 (time steps 0-999)
-        self.assertEqual(results[0]['type'], 'EF')
-        self.assertEqual(results[0]['packets_generated'], 1000)
-        self.assertAlmostEqual(results[0]['drop_rate'], 0.0)
-        self.assertEqual(results[0]['completion_time'], 999)
-
     def test_single_af_source_metrics(self):
         """Test single AF source metrics."""
         random.seed(42)

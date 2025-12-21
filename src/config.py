@@ -61,4 +61,4 @@ AF_REMARKING_INTERVAL = 5  # Every 5th AF packet -> BE
 # ============================================================================
 
 # Number of successful packets needed for each source to complete
-TARGET_SUCCESS_PACKETS = 20
+TARGET_SUCCESS_PACKETS = 1000

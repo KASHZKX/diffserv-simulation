@@ -86,6 +86,7 @@ class CoreNode:
         packet = None
         # Keep popping packets until we find one from an unfinished source
         while True:
+            
             # Pop packet with priority: EF > AF > BE
             if self.q_ef:
                 packet = self.q_ef.pop(0)
@@ -97,7 +98,6 @@ class CoreNode:
                 # No more packets in any queue
                 packet = None
                 break
-            
             # Check if the source is already finished (sources must be provided)
             if sources:
                 source = sources[packet.source_id]

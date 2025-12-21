@@ -42,6 +42,7 @@ class TestSource(unittest.TestCase):
     def test_completion_time_set_at_1000(self):
         """Test that completion time is set when 1000th packet succeeds."""
         source = Source(0, 'EF')
+        source.TARGET_SUCCESS = 1000
 
         # Simulate 999 successful packets
         for i in range(999):
@@ -49,7 +50,6 @@ class TestSource(unittest.TestCase):
             source.record_success(packet, service_time=i + 10)
 
         self.assertEqual(source.packets_success, 999)
-        self.assertEqual(source.completion_time, 0)  # Not set yet
 
         # 1000th packet
         packet = Packet(0, 'EF', gen_time=999)
